@@ -89,6 +89,9 @@ spec:
               value: "info"
             - name: FELIX_HEALTHENABLED
               value: "true"
+            # Enable felix to keep existing iptable chains
+            - name: FELIX_CHAININSERTMODE
+              value: "Append"
           securityContext:
             privileged: true
           resources:
