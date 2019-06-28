@@ -65,13 +65,13 @@ resource "tls_cert_request" "apiserver" {
     organization = "system:masters"
   }
 
-  dns_names = [
+  dns_names = flatten([
     var.api_servers,
     "kubernetes",
     "kubernetes.default",
     "kubernetes.default.svc",
     "kubernetes.default.svc.${var.cluster_domain_suffix}",
-  ]
+  ])
 
   ip_addresses = [
     cidrhost(var.service_cidr, 1),

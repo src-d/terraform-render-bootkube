@@ -106,9 +106,9 @@ resource "tls_cert_request" "client" {
   # If the expression in the following list itself returns a list, remove the
   # brackets to avoid interpretation as a list of lists. If the expression
   # returns a single list item then leave it as-is and remove this TODO comment.
-  dns_names = [
+  dns_names = flatten([
     concat(var.etcd_servers, ["localhost"]),
-  ]
+  ])
 }
 
 resource "tls_locally_signed_cert" "client" {
@@ -154,9 +154,9 @@ resource "tls_cert_request" "server" {
   # If the expression in the following list itself returns a list, remove the
   # brackets to avoid interpretation as a list of lists. If the expression
   # returns a single list item then leave it as-is and remove this TODO comment.
-  dns_names = [
+  dns_names = flatten([
     concat(var.etcd_servers, ["localhost"]),
-  ]
+  ])
 }
 
 resource "tls_locally_signed_cert" "server" {
@@ -190,7 +190,7 @@ resource "tls_cert_request" "peer" {
     organization = "etcd"
   }
 
-  dns_names = var.etcd_servers
+  dns_names = flatten(var.etcd_servers)
 }
 
 resource "tls_locally_signed_cert" "peer" {
