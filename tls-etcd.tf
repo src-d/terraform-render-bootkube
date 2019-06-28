@@ -1,54 +1,54 @@
 # etcd-client-ca.crt
 resource "local_file" "etcd_client_ca_crt" {
-  content  = "${tls_self_signed_cert.etcd-ca.cert_pem}"
+  content  = tls_self_signed_cert.etcd-ca.cert_pem
   filename = "${var.asset_dir}/tls/etcd-client-ca.crt"
 }
 
 # etcd-client.crt
 resource "local_file" "etcd_client_crt" {
-  content  = "${tls_locally_signed_cert.client.cert_pem}"
+  content  = tls_locally_signed_cert.client.cert_pem
   filename = "${var.asset_dir}/tls/etcd-client.crt"
 }
 
 # etcd-client.key
 resource "local_file" "etcd_client_key" {
-  content  = "${tls_private_key.client.private_key_pem}"
+  content  = tls_private_key.client.private_key_pem
   filename = "${var.asset_dir}/tls/etcd-client.key"
 }
 
 # server-ca.crt
 resource "local_file" "etcd_server_ca_crt" {
-  content  = "${tls_self_signed_cert.etcd-ca.cert_pem}"
+  content  = tls_self_signed_cert.etcd-ca.cert_pem
   filename = "${var.asset_dir}/tls/etcd/server-ca.crt"
 }
 
 # server.crt
 resource "local_file" "etcd_server_crt" {
-  content  = "${tls_locally_signed_cert.server.cert_pem}"
+  content  = tls_locally_signed_cert.server.cert_pem
   filename = "${var.asset_dir}/tls/etcd/server.crt"
 }
 
 # server.key
 resource "local_file" "etcd_server_key" {
-  content  = "${tls_private_key.server.private_key_pem}"
+  content  = tls_private_key.server.private_key_pem
   filename = "${var.asset_dir}/tls/etcd/server.key"
 }
 
 # peer-ca.crt
 resource "local_file" "etcd_peer_ca_crt" {
-  content  = "${tls_self_signed_cert.etcd-ca.cert_pem}"
+  content  = tls_self_signed_cert.etcd-ca.cert_pem
   filename = "${var.asset_dir}/tls/etcd/peer-ca.crt"
 }
 
 # peer.crt
 resource "local_file" "etcd_peer_crt" {
-  content  = "${tls_locally_signed_cert.peer.cert_pem}"
+  content  = tls_locally_signed_cert.peer.cert_pem
   filename = "${var.asset_dir}/tls/etcd/peer.crt"
 }
 
 # peer.key
 resource "local_file" "etcd_peer_key" {
-  content  = "${tls_private_key.peer.private_key_pem}"
+  content  = tls_private_key.peer.private_key_pem
   filename = "${var.asset_dir}/tls/etcd/peer.key"
 }
 
@@ -60,8 +60,8 @@ resource "tls_private_key" "etcd-ca" {
 }
 
 resource "tls_self_signed_cert" "etcd-ca" {
-  key_algorithm   = "${tls_private_key.etcd-ca.algorithm}"
-  private_key_pem = "${tls_private_key.etcd-ca.private_key_pem}"
+  key_algorithm   = tls_private_key.etcd-ca.algorithm
+  private_key_pem = tls_private_key.etcd-ca.private_key_pem
 
   subject {
     common_name  = "etcd-ca"
@@ -86,8 +86,8 @@ resource "tls_private_key" "client" {
 }
 
 resource "tls_cert_request" "client" {
-  key_algorithm   = "${tls_private_key.client.algorithm}"
-  private_key_pem = "${tls_private_key.client.private_key_pem}"
+  key_algorithm   = tls_private_key.client.algorithm
+  private_key_pem = tls_private_key.client.private_key_pem
 
   subject {
     common_name  = "etcd-client"
@@ -98,19 +98,25 @@ resource "tls_cert_request" "client" {
     "127.0.0.1",
   ]
 
-  dns_names = ["${concat(
-    var.etcd_servers,
-    list(
-      "localhost",
-    ))}"]
+  # TF-UPGRADE-TODO: In Terraform v0.10 and earlier, it was sometimes necessary to
+  # force an interpolation expression to be interpreted as a list by wrapping it
+  # in an extra set of list brackets. That form was supported for compatibilty in
+  # v0.11, but is no longer supported in Terraform v0.12.
+  #
+  # If the expression in the following list itself returns a list, remove the
+  # brackets to avoid interpretation as a list of lists. If the expression
+  # returns a single list item then leave it as-is and remove this TODO comment.
+  dns_names = [
+    concat(var.etcd_servers, ["localhost"]),
+  ]
 }
 
 resource "tls_locally_signed_cert" "client" {
-  cert_request_pem = "${tls_cert_request.client.cert_request_pem}"
+  cert_request_pem = tls_cert_request.client.cert_request_pem
 
-  ca_key_algorithm   = "${join(" ", tls_self_signed_cert.etcd-ca.*.key_algorithm)}"
-  ca_private_key_pem = "${join(" ", tls_private_key.etcd-ca.*.private_key_pem)}"
-  ca_cert_pem        = "${join(" ", tls_self_signed_cert.etcd-ca.*.cert_pem)}"
+  ca_key_algorithm   = join(" ", tls_self_signed_cert.etcd-ca.*.key_algorithm)
+  ca_private_key_pem = join(" ", tls_private_key.etcd-ca.*.private_key_pem)
+  ca_cert_pem        = join(" ", tls_self_signed_cert.etcd-ca.*.cert_pem)
 
   validity_period_hours = 8760
 
@@ -128,8 +134,8 @@ resource "tls_private_key" "server" {
 }
 
 resource "tls_cert_request" "server" {
-  key_algorithm   = "${tls_private_key.server.algorithm}"
-  private_key_pem = "${tls_private_key.server.private_key_pem}"
+  key_algorithm   = tls_private_key.server.algorithm
+  private_key_pem = tls_private_key.server.private_key_pem
 
   subject {
     common_name  = "etcd-server"
@@ -140,19 +146,25 @@ resource "tls_cert_request" "server" {
     "127.0.0.1",
   ]
 
-  dns_names = ["${concat(
-    var.etcd_servers,
-    list(
-      "localhost",
-    ))}"]
+  # TF-UPGRADE-TODO: In Terraform v0.10 and earlier, it was sometimes necessary to
+  # force an interpolation expression to be interpreted as a list by wrapping it
+  # in an extra set of list brackets. That form was supported for compatibilty in
+  # v0.11, but is no longer supported in Terraform v0.12.
+  #
+  # If the expression in the following list itself returns a list, remove the
+  # brackets to avoid interpretation as a list of lists. If the expression
+  # returns a single list item then leave it as-is and remove this TODO comment.
+  dns_names = [
+    concat(var.etcd_servers, ["localhost"]),
+  ]
 }
 
 resource "tls_locally_signed_cert" "server" {
-  cert_request_pem = "${tls_cert_request.server.cert_request_pem}"
+  cert_request_pem = tls_cert_request.server.cert_request_pem
 
-  ca_key_algorithm   = "${join(" ", tls_self_signed_cert.etcd-ca.*.key_algorithm)}"
-  ca_private_key_pem = "${join(" ", tls_private_key.etcd-ca.*.private_key_pem)}"
-  ca_cert_pem        = "${join(" ", tls_self_signed_cert.etcd-ca.*.cert_pem)}"
+  ca_key_algorithm   = join(" ", tls_self_signed_cert.etcd-ca.*.key_algorithm)
+  ca_private_key_pem = join(" ", tls_private_key.etcd-ca.*.private_key_pem)
+  ca_cert_pem        = join(" ", tls_self_signed_cert.etcd-ca.*.cert_pem)
 
   validity_period_hours = 8760
 
@@ -170,23 +182,23 @@ resource "tls_private_key" "peer" {
 }
 
 resource "tls_cert_request" "peer" {
-  key_algorithm   = "${tls_private_key.peer.algorithm}"
-  private_key_pem = "${tls_private_key.peer.private_key_pem}"
+  key_algorithm   = tls_private_key.peer.algorithm
+  private_key_pem = tls_private_key.peer.private_key_pem
 
   subject {
     common_name  = "etcd-peer"
     organization = "etcd"
   }
 
-  dns_names = ["${var.etcd_servers}"]
+  dns_names = var.etcd_servers
 }
 
 resource "tls_locally_signed_cert" "peer" {
-  cert_request_pem = "${tls_cert_request.peer.cert_request_pem}"
+  cert_request_pem = tls_cert_request.peer.cert_request_pem
 
-  ca_key_algorithm   = "${join(" ", tls_self_signed_cert.etcd-ca.*.key_algorithm)}"
-  ca_private_key_pem = "${join(" ", tls_private_key.etcd-ca.*.private_key_pem)}"
-  ca_cert_pem        = "${join(" ", tls_self_signed_cert.etcd-ca.*.cert_pem)}"
+  ca_key_algorithm   = join(" ", tls_self_signed_cert.etcd-ca.*.key_algorithm)
+  ca_private_key_pem = join(" ", tls_private_key.etcd-ca.*.private_key_pem)
+  ca_cert_pem        = join(" ", tls_self_signed_cert.etcd-ca.*.cert_pem)
 
   validity_period_hours = 8760
 
@@ -197,3 +209,4 @@ resource "tls_locally_signed_cert" "peer" {
     "client_auth",
   ]
 }
+
